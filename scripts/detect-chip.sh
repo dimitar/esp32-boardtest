@@ -14,7 +14,7 @@ PORT_ARG=()
 
 echo "Detecting chip (plug in exactly one board)..."
 # chip_id output includes a 'Detecting chip type... <CHIP>' line.
-OUT="$(esptool.py "${PORT_ARG[@]}" chip_id 2>&1)" || { echo "$OUT" >&2; exit 1; }
+OUT="$(esptool.py ${PORT_ARG[@]+"${PORT_ARG[@]}"} chip_id 2>&1)" || { echo "$OUT" >&2; exit 1; }
 echo "$OUT"
 
 CHIP="$(printf '%s\n' "$OUT" | grep -iE 'Detecting chip type' | tail -1 | sed -E 's/.*\.\.\.[[:space:]]*//' )"
