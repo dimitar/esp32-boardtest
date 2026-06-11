@@ -1,0 +1,28 @@
+menu "Board Test Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default ""
+        help
+            SSID of the AP to connect to. Leave blank to skip WiFi at boot.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default ""
+        help
+            Password of the AP. Ignored if SSID is blank.
+
+    config WIFI_MAX_RETRY
+        int "WiFi maximum connect retries"
+        default 5
+        help
+            Number of reconnect attempts before giving up (board keeps running).
+
+    config BLINK_GPIO
+        int "Blink LED GPIO number"
+        default 2
+        help
+            GPIO connected to the onboard LED. Common: 2 (WROOM), 48 (many S3),
+            8 (many C3). Adjust per board.
+
+endmenu

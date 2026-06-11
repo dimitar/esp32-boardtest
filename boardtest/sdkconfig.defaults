@@ -1,0 +1,3 @@
+# Non-secret build defaults. Secrets (WiFi creds) are set via menuconfig
+# and live in the gitignored sdkconfig.
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
