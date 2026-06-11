@@ -1,44 +1,46 @@
-# ESP32 Board Test
+# esp32
 
-ESP-IDF v5.5.4 repo for confirming new ESP32 boards work: chip info, blink, and
-optional WiFi. Build is target-agnostic — detect the chip per board, then set
-the matching target.
+Home automation firmware for ESP32 boards. The end goal is an **ESP32 + CC1101
+RF433 controller for A-OK roller-shutter motors** (sold here under the **NuStyle**
+brand), exposed to **Home Assistant**.
 
-## One-time setup
+The shutter motors use the **A-OK protocol at 433.92 MHz OOK/ASK** — a
+reverse-engineered, 65-bit framed protocol with a per-remote ID and checksum.
+It isn't a secure rolling code, so captured UP/DOWN/STOP frames can be replayed
+directly (pairing the ESP as a new virtual remote via each motor's PROGRAM
+button is the advanced alternative). Protocol reference:
+[akirjavainen/A-OK](https://github.com/akirjavainen/A-OK).
 
-```bash
-./scripts/setup-idf.sh        # installs ESP-IDF v5.5.4 to ~/esp/esp-idf (~10-20 min)
-```
+## What's in here
 
-## Each terminal
+Two independent sub-projects, each with its own toolchain and README:
 
-```bash
-source scripts/env.sh         # puts idf.py on PATH
-```
+| Directory | Toolchain | Purpose |
+|-----------|-----------|---------|
+| [`shutters-cc1101/`](shutters-cc1101/) | ESPHome (YAML) | **The shutter controller** — the real deliverable. Capture the remote, then drive the shutters as Home Assistant covers. |
+| [`boardtest/`](boardtest/) | ESP-IDF v5.5.4 (C) | Board bring-up — chip info + blink + optional WiFi, to confirm a new board is alive. |
 
-## Per board
+`scripts/` holds the ESP-IDF install/activate/chip-detect helpers used by
+`boardtest`. `docs/` holds the design spec and implementation plan.
 
-```bash
-source scripts/env.sh
-./scripts/detect-chip.sh           # prints chip + the set-target to run
-cd boardtest
-idf.py set-target <chip>           # e.g. esp32, esp32s3, esp32c3
-idf.py menuconfig                  # Board Test Configuration: WiFi SSID/pass, blink GPIO
-idf.py flash monitor               # flash + watch serial (Ctrl-] to exit)
-```
+## Hardware
 
-Expected serial output: chip model/cores/flash/MAC, a "Blinking GPIO N" line
-(LED toggles ~1 Hz), and either a WiFi IP or a notice that SSID is unset.
+ESP32 dev board + **CC1101 433 MHz transceiver** + a 433 MHz antenna + jumper
+wires. The CC1101 wiring and a per-pin table are in
+[`shutters-cc1101/README.md`](shutters-cc1101/README.md).
 
-## Configuration
+> ⚠️ **The CC1101 is 3.3 V only — 5 V permanently destroys it.** Power it from
+> the ESP32's `3V3` pin. ESP32 SPI pins are 3.3 V, so no level shifter is needed.
 
-Set via `idf.py menuconfig` → **Board Test Configuration**:
+## Getting started
 
-- **WiFi SSID / Password** — leave SSID blank to skip WiFi at boot.
-- **Blink LED GPIO** — default 2 (WROOM). Common alternatives: 48 (many S3), 8 (many C3).
+- **Build the shutter controller:** see [`shutters-cc1101/README.md`](shutters-cc1101/README.md).
+  Requires ESPHome (a virtualenv lives at `~/esp/esphome-venv`).
+- **Bring up a bare board first:** see [`boardtest/README.md`](boardtest/README.md).
+  Requires ESP-IDF (`./scripts/setup-idf.sh` installs it to `~/esp/esp-idf`).
 
-Values live in `sdkconfig`, which is gitignored — no secrets in source.
+## Secrets
 
-## Adding sensor tests
-
-See `boardtest/components/README.md`.
+Credentials are never committed. ESP-IDF keeps WiFi creds in the gitignored
+`sdkconfig` (set via `menuconfig`); ESPHome keeps them in a gitignored
+`secrets.yaml` (copy `shutters-cc1101/secrets.yaml.example`).
