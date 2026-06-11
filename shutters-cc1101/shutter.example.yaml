@@ -1,0 +1,86 @@
+# A-OK shutter controller — CONTROL profile (TEMPLATE).
+#
+# This is a template: copy it to shutter.yaml, then paste the raw timings you
+# recorded with capture.yaml into the open/close/stop actions below. The
+# placeholder `code:` lists are NOT real A-OK frames — the shutter won't move
+# until you replace them with your captured timings.
+#
+# A-OK is not a secure rolling code, so replaying the captured UP/DOWN/STOP
+# frames works directly. (Advanced alternative: pair the ESP as a new remote
+# with its own ID — see README.md.)
+#
+# Wiring: see README.md. CC1101 is 3.3 V ONLY.
+
+substitutions:
+  name: shutters
+  friendly_name: "Shutters"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+
+logger:
+api:
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+cc1101:
+  cs_pin: GPIO5
+  frequency: 433.92MHz
+
+# GDO0 carries transmit data; the begin_tx/begin_rx hooks flip the CC1101
+# between send and receive around each transmission.
+remote_transmitter:
+  pin: GPIO4            # wire to CC1101 GDO0
+  carrier_duty_percent: 100%
+  on_transmit:
+    then:
+      - cc1101.begin_tx
+  on_complete:
+    then:
+      - cc1101.begin_rx
+
+remote_receiver:
+  pin: GPIO16           # wire to CC1101 GDO2
+  dump: all
+
+# --- One cover per shutter -------------------------------------------------
+# Duplicate this block for each shutter, giving each its own captured codes.
+# `code:` is a list of microsecond durations: positive = signal on, negative
+# = gap. Paste the raw list captured for each button. Values below are a
+# PLACEHOLDER shape only — replace them.
+cover:
+  - platform: template
+    name: "Living Room Shutter"
+    device_class: shutter
+    optimistic: true
+    open_action:
+      - remote_transmitter.transmit_raw:
+          code: [4900, -1500, 650, -650, 650, -650]   # <-- PLACEHOLDER: paste UP timings
+          repeat:
+            times: 6
+            wait_time: 10ms
+    close_action:
+      - remote_transmitter.transmit_raw:
+          code: [4900, -1500, 650, -650, 650, -650]   # <-- PLACEHOLDER: paste DOWN timings
+          repeat:
+            times: 6
+            wait_time: 10ms
+    stop_action:
+      - remote_transmitter.transmit_raw:
+          code: [4900, -1500, 650, -650, 650, -650]   # <-- PLACEHOLDER: paste STOP timings
+          repeat:
+            times: 6
+            wait_time: 10ms

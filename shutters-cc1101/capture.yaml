@@ -1,0 +1,49 @@
+# A-OK shutter controller — CC1101 CAPTURE profile.
+#
+# Flash this FIRST. It puts the CC1101 into receive mode and dumps every
+# 433.92 MHz signal it hears. Open the ESPHome logs, press a button on your
+# existing shutter remote, and copy the raw timing list it prints — those
+# timings go into shutter.example.yaml to control the shutter.
+#
+# Wiring: see README.md. CC1101 is 3.3 V ONLY.
+
+substitutions:
+  name: shutter-rf
+  friendly_name: "Shutter RF (capture)"
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+
+esp32:
+  board: esp32dev
+
+logger:
+  level: DEBUG          # raw/decoded dumps print at DEBUG
+
+api:
+ota:
+  - platform: esphome
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# --- 433.92 MHz radio on the CC1101 over SPI -------------------------------
+spi:
+  clk_pin: GPIO18
+  mosi_pin: GPIO23
+  miso_pin: GPIO19
+
+cc1101:
+  cs_pin: GPIO5
+  frequency: 433.92MHz
+
+# A-OK is OOK/ASK. GDO2 carries the demodulated receive data.
+# Filters are widened so the ~65-bit A-OK frame isn't truncated.
+remote_receiver:
+  pin: GPIO16           # wire to CC1101 GDO2
+  dump: all             # prints raw timings + any decoded protocols
+  filter: 50us
+  idle: 8ms
+  tolerance: 25%
